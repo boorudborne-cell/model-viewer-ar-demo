@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D в вебе и AR — &lt;model-viewer&gt;</title>
+  <meta name="description" content="Интерактивная 3D-модель и AR через <model-viewer>: glTF + USDZ, HDRI-освещение, Scene Viewer (Android) и Quick Look (iOS)." />
+  <meta name="theme-color" content="#0b0f19" />
+
+  <!-- Веб-компонент <model-viewer> от Google.
+       Локальная копия версии 4.x (файл libs/model-viewer.min.js).
+       Вариант с CDN: <script type="module"
+         src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4/dist/model-viewer.min.js"></script> -->
+  <script type="module" src="libs/model-viewer.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #111827;
+      --card-2: #151d2e;
+      --text: #e5eaf3;
+      --muted: #93a0b4;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(124,92,255,.18), transparent 60%),
+        radial-gradient(900px 500px at -10% 20%, rgba(79,140,255,.14), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header { text-align: center; padding: 40px 16px 8px; }
+    h1 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 10px; }
+    .subtitle { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 780px; margin: 0 auto; }
+    code {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08);
+      padding: 2px 6px; border-radius: 6px; font-size: .9em; overflow-wrap: break-word;
+    }
+
+    main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 40px; }
+
+    .viewer-card {
+      background: linear-gradient(180deg, var(--card-2), var(--card));
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+
+    model-viewer {
+      width: 100%;
+      height: min(64vh, 560px);
+      background-color: #0d1220;
+      --progress-bar-color: var(--accent);
+    }
+
+    /* Свой прогресс-бар загрузки (слот progress-bar) */
+    .progress-bar {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      display: block; width: 33%; max-width: 220px; height: 6px;
+      margin: 0 auto 14px;
+      border-radius: 4px; overflow: hidden;
+      background: rgba(255,255,255,.15);
+    }
+    .update-bar {
+      width: 0%; height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: 4px; transition: width .2s ease;
+    }
+    .progress-bar { transition: opacity .4s ease; }
+
+    /* Кнопка AR — слот ar-button. model-viewer сам скроет её,
+       если устройство не поддерживает AR. */
+    #ar-button {
+      position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; border: 0; border-radius: 999px;
+      padding: 13px 26px; font-size: 15px; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(79,140,255,.45);
+      cursor: pointer; white-space: nowrap;
+    }
+    #ar-button:active { transform: translateX(-50%) scale(.97); }
+
+    /* Контент без slot="" показывается, только если WebGL недоступен */
+    .webgl-fallback { display: none; padding: 40px 20px; text-align: center; color: var(--muted); }
+    model-viewer:not(:defined) .webgl-fallback { display: block; }
+
+    .status-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; color: var(--muted); font-size: 13.5px; line-height: 1.5;
+      border-top: 1px solid rgba(255,255,255,.06);
+      min-height: 42px;
+    }
+    .status-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #39d98a; flex: none; }
+    .status-bar.warn .dot { background: #f5b83d; }
+    .status-bar.ar .dot { background: var(--accent-2); }
+
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      padding: 14px 16px 18px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+    }
+    .chip, select.chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--text);
+      padding: 9px 14px; border-radius: 999px;
+      font-size: 13.5px; cursor: pointer; user-select: none;
+      transition: background .15s ease, border-color .15s ease;
+      max-width: 100%;
+    }
+    .chip:hover { background: rgba(255,255,255,.1); }
+    .chip.on { border-color: var(--accent); background: rgba(79,140,255,.15); }
+    .chip input { accent-color: var(--accent); margin: 0; }
+    .spacer { flex: 1 1 auto; }
+    .exp { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .exp input[type="range"] { accent-color: var(--accent); width: 120px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 28px; }
+    .card {
+      background: var(--card); border: 1px solid rgba(255,255,255,.07);
+      border-radius: var(--radius); padding: 18px;
+    }
+    .card h2 { font-size: 16px; margin: 0 0 8px; }
+    .card p { color: var(--muted); font-size: 13.5px; line-height: 1.65; margin: 0; }
+    .card p + p { margin-top: 8px; }
+    .tag {
+      display: inline-block; font-size: 11.5px; letter-spacing: .4px;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+    }
+
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 0 16px 40px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧑‍🚀 3D-модель в вебе и дополненной реальности</h1>
+  <p class="subtitle">
+    Веб-компонент <code>&lt;model-viewer&gt;</code> от Google: вращайте и приближайте модель
+    мышью или пальцами, а кнопка «Посмотреть в AR» перенесёт её в вашу комнату —
+    <b>Scene&nbsp;Viewer</b> (Android, ARCore) или <b>Quick&nbsp;Look</b> (iOS).
+  </p>
+</header>
+
+<main>
+  <section class="viewer-card">
+    <!--
+      src                — модель в glTF/GLB (веб-просмотр, WebXR и Scene Viewer)
+      ios-src            — та же модель в USDZ (AR Quick Look на iOS)
+      ar                 — включить кнопку AR
+      ar-modes           — приоритет AR-режимов: WebXR в браузере → Scene Viewer (Android) → Quick Look (iOS)
+      xr-environment     — в WebXR-AR использовать освещение реального мира
+      environment-image  — HDRI-карта окружения: реалистичный свет и отражения на модели
+    -->
+    <model-viewer
+      id="viewer"
+      src="assets/models/Astronaut.glb"
+      ios-src="assets/models/Astronaut.usdz"
+      alt="3D-модель астронавта"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-scale="auto"
+      ar-placement="floor"
+      xr-environment
+      environment-image="assets/environments/spruit_sunrise_1k.hdr"
+      environment-intensity="1"
+      shadow-intensity="1"
+      shadow-softness="0.85"
+      camera-controls
+      touch-action="pan-y"
+      auto-rotate
+      auto-rotate-delay="1500"
+      rotation-per-second="25deg"
+      interaction-prompt="auto"
+      camera-orbit="40deg 72deg auto"
+      loading="eager"
+      reveal="auto">
+
+      <div slot="progress-bar" class="progress-bar"><div class="update-bar" id="update-bar"></div></div>
+
+      <button slot="ar-button" id="ar-button">🥽&nbsp;&nbsp;Посмотреть в AR</button>
+
+      <div class="webgl-fallback">
+        Браузер не поддерживает WebGL — интерактивный 3D недоступен.<br />
+        Попробуйте актуальные Chrome, Edge, Firefox или Safari.
+      </div>
+    </model-viewer>
+
+    <div class="status-bar" id="status-bar">
+      <span class="dot"></span>
+      <span id="status-text">Загрузка модели…</span>
+    </div>
+
+    <div class="controls">
+      <label class="chip on"><input type="checkbox" id="rotate" checked> Автовращение</label>
+      <label class="chip"><input type="checkbox" id="skybox"> HDRI как фон</label>
+      <label class="exp">Свет
+        <input type="range" id="exposure" min="0.2" max="2.5" step="0.05" value="1">
+      </label>
+      <span class="spacer"></span>
+      <select class="chip" id="env" title="HDRI-окружение">
+        <option value="assets/environments/spruit_sunrise_1k.hdr">HDRI: Рассвет (Spruit Sunrise)</option>
+        <option value="assets/environments/whipple_creek_1k.hdr">HDRI: Лес (Whipple Creek)</option>
+        <option value="assets/environments/music_hall_01_1k.hdr">HDRI: Концертный зал</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <span class="tag">Форматы</span>
+      <h2>glTF / GLB + USDZ</h2>
+      <p><code>src</code> — модель в glTF (<b>Astronaut.glb</b>): работает в 3D-просмотрщике, в WebXR и в Scene&nbsp;Viewer.</p>
+      <p><code>ios-src</code> — та же модель в <b>USDZ</b>: её использует AR&nbsp;Quick&nbsp;Look на iPhone/iPad.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Освещение</span>
+      <h2>HDRI-карты</h2>
+      <p><code>environment-image</code> подключает HDR-карту окружения — модель получает реалистичные отражения и мягкий заполняющий свет.</p>
+      <p>Чип «HDRI как фон» включает <code>skybox-image</code>: карта становится фоном всей сцены.</p>
+    </div>
+    <div class="card">
+      <span class="tag">AR-режимы</span>
+      <h2>ar + ar-modes</h2>
+      <p><code>ar-modes="webxr scene-viewer quick-look"</code>: WebXR — AR прямо в Chrome на Android; Scene&nbsp;Viewer — системное приложение Google; Quick&nbsp;Look — Safari на iOS.</p>
+      <p><code>ar-placement="floor"</code> ставит модель на пол, <code>ar-scale="auto"</code> — в реальном масштабе.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Запуск</span>
+      <h2>Только HTTPS или localhost</h2>
+      <p>AR и доступ к камере работают из безопасного контекста: <code>https://</code> или <code>http://localhost</code>. Просто открыть файл с диска нельзя.</p>
+      <p>Локально: запустите <code>serve.bat</code> (или <code>npx http-server -p 8080</code>). Для AR на телефоне нужен публичный HTTPS — например, GitHub&nbsp;Pages или Netlify.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Проверка на устройствах: Android — Chrome + «Google Play Services for AR» (ARCore) · iOS — Safari, Quick&nbsp;Look встроен.<br />
+  Удалённая отладка: <code>chrome://inspect</code> (Android) и Safari Web Inspector (iOS).
+</footer>
+
+<script>
+  const viewer    = document.getElementById('viewer');
+  const statusText = document.getElementById('status-text');
+  const statusBar  = document.getElementById('status-bar');
+  const updateBar  = document.getElementById('update-bar');
+
+  const AR_STATUS = {
+    'not-presenting':  'AR не активен — смотрите модель в 3D. Вращение: мышь или палец, масштаб: колесо или щипок',
+    'session-started': 'AR-сессия запущена — наведите камеру на пол и коснитесь экрана',
+    'object-placed':   'Модель размещена в вашей комнате 🎉 Можно ходить вокруг и масштабировать',
+    'failed':          'Не удалось запустить AR. Проверьте: страница открыта по HTTPS, установлен ARCore (Android) или поддерживается Quick Look (iOS)'
+  };
+
+  viewer.addEventListener('progress', (event) => {
+    const p = event.detail.totalProgress;
+    updateBar.parentElement.style.opacity = p > 0 && p < 1 ? '1' : '0';
+    updateBar.style.width = Math.round(p * 100) + '%';
+  });
+
+  viewer.addEventListener('load', () => {
+    updateBar.parentElement.style.opacity = '0';
+    statusText.textContent = 'Модель загружена: glTF-просмотр работает, HDRI-освещение активно';
+  });
+
+  viewer.addEventListener('ar-status', (event) => {
+    const s = event.detail.status;
+    statusText.textContent = AR_STATUS[s] || s;
+    statusBar.classList.toggle('ar', s === 'session-started' || s === 'object-placed');
+    statusBar.classList.toggle('warn', s === 'failed');
+  });
+
+  viewer.addEventListener('error', (event) => {
+    const why = event.detail && event.detail.sourceError && event.detail.sourceError.message;
+    statusText.textContent = 'Ошибка загрузки модели: ' + (why || event.type);
+    statusBar.classList.add('warn');
+  });
+
+  // Автовращение
+  const rotate = document.getElementById('rotate');
+  rotate.addEventListener('change', () => {
+    viewer.autoRotate = rotate.checked;
+    rotate.closest('.chip').classList.toggle('on', rotate.checked);
+  });
+
+  // Переключение HDRI-окружения (свет и отражения)
+  const skybox = document.getElementById('skybox');
+  const env    = document.getElementById('env');
+  env.addEventListener('change', () => {
+    viewer.setAttribute('environment-image', env.value);
+    if (skybox.checked) viewer.setAttribute('skybox-image', env.value);
+  });
+  skybox.addEventListener('change', () => {
+    if (skybox.checked) viewer.setAttribute('skybox-image', env.value);
+    else viewer.removeAttribute('skybox-image');
+  });
+
+  // Яркость света (экспозиция)
+  const exposure = document.getElementById('exposure');
+  exposure.addEventListener('input', () => { viewer.exposure = parseFloat(exposure.value); });
+</script>
+
+</body>
+</html>
