@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D в вебе и AR — &lt;model-viewer&gt;</title>
-  <meta name="description" content="Интерактивная 3D-модель и AR через <model-viewer>: glTF + USDZ, HDRI-освещение, Scene Viewer (Android) и Quick Look (iOS)." />
+  <title>Монета Dollar Coin в 3D и AR</title>
+  <meta name="description" content="Посмотрите 3D-модель монеты Dollar Coin и разместите её рядом с собой в дополненной реальности." />
   <meta name="theme-color" content="#0b0f19" />
 
   <!-- Веб-компонент <model-viewer> от Google.
@@ -143,11 +143,10 @@
 <body>
 
 <header>
-  <h1>🧑‍🚀 3D-модель в вебе и дополненной реальности</h1>
+  <h1>🪙 Монета Dollar Coin в 3D и AR</h1>
   <p class="subtitle">
-    Веб-компонент <code>&lt;model-viewer&gt;</code> от Google: вращайте и приближайте модель
-    мышью или пальцами, а кнопка «Посмотреть в AR» перенесёт её в вашу комнату —
-    <b>Scene&nbsp;Viewer</b> (Android, ARCore) или <b>Quick&nbsp;Look</b> (iOS).
+    Вращайте и приближайте монету пальцами. На совместимом телефоне нажмите
+    «Посмотреть в AR», чтобы разместить её в комнате.
   </p>
 </header>
 
@@ -155,7 +154,7 @@
   <section class="viewer-card">
     <!--
       src                — модель в glTF/GLB (веб-просмотр, WebXR и Scene Viewer)
-      ios-src            — та же модель в USDZ (AR Quick Look на iOS)
+      Quick Look на iOS получает USDZ, автоматически созданный из GLB
       ar                 — включить кнопку AR
       ar-modes           — приоритет AR-режимов: WebXR в браузере → Scene Viewer (Android) → Quick Look (iOS)
       xr-environment     — в WebXR-AR использовать освещение реального мира
@@ -163,9 +162,8 @@
     -->
     <model-viewer
       id="viewer"
-      src="assets/models/Astronaut.glb"
-      ios-src="assets/models/Astronaut.usdz"
-      alt="3D-модель астронавта"
+      src="assets/models/Dollar-Coin.glb"
+      alt="3D-модель монеты Dollar Coin"
       ar
       ar-modes="webxr scene-viewer quick-look"
       ar-scale="auto"
@@ -181,7 +179,7 @@
       auto-rotate-delay="1500"
       rotation-per-second="25deg"
       interaction-prompt="auto"
-      camera-orbit="40deg 72deg auto"
+      camera-orbit="40deg 25deg auto"
       loading="eager"
       reveal="auto">
 
@@ -218,9 +216,9 @@
   <section class="grid">
     <div class="card">
       <span class="tag">Форматы</span>
-      <h2>glTF / GLB + USDZ</h2>
-      <p><code>src</code> — модель в glTF (<b>Astronaut.glb</b>): работает в 3D-просмотрщике, в WebXR и в Scene&nbsp;Viewer.</p>
-      <p><code>ios-src</code> — та же модель в <b>USDZ</b>: её использует AR&nbsp;Quick&nbsp;Look на iPhone/iPad.</p>
+      <h2>GLB + Quick Look</h2>
+      <p>Монета загружается из GLB для 3D-просмотра и AR на Android.</p>
+      <p>На iPhone и iPad компонент автоматически создаёт USDZ из той же модели для Quick&nbsp;Look.</p>
     </div>
     <div class="card">
       <span class="tag">Освещение</span>
@@ -232,20 +230,20 @@
       <span class="tag">AR-режимы</span>
       <h2>ar + ar-modes</h2>
       <p><code>ar-modes="webxr scene-viewer quick-look"</code>: WebXR — AR прямо в Chrome на Android; Scene&nbsp;Viewer — системное приложение Google; Quick&nbsp;Look — Safari на iOS.</p>
-      <p><code>ar-placement="floor"</code> ставит модель на пол, <code>ar-scale="auto"</code> — в реальном масштабе.</p>
+      <p><code>ar-placement="floor"</code> ставит модель на пол, <code>ar-scale="auto"</code> позволяет менять её размер жестом.</p>
     </div>
     <div class="card">
       <span class="tag">Запуск</span>
       <h2>Только HTTPS или localhost</h2>
       <p>AR и доступ к камере работают из безопасного контекста: <code>https://</code> или <code>http://localhost</code>. Просто открыть файл с диска нельзя.</p>
-      <p>Локально: запустите <code>serve.bat</code> (или <code>npx http-server -p 8080</code>). Для AR на телефоне нужен публичный HTTPS — например, GitHub&nbsp;Pages или Netlify.</p>
+      <p>Локально: запустите <code>serve.bat</code>. Для AR на телефоне откройте эту страницу по HTTPS.</p>
     </div>
   </section>
 </main>
 
 <footer>
-  Проверка на устройствах: Android — Chrome + «Google Play Services for AR» (ARCore) · iOS — Safari, Quick&nbsp;Look встроен.<br />
-  Удалённая отладка: <code>chrome://inspect</code> (Android) и Safari Web Inspector (iOS).
+  Модель: <a href="https://rigmodels.com/model.php?view=Dollar_Coin-3d-model__6DRTYIUE29U8TWBSK78PS2S3X&amp;searchkeyword=money">Dollar Coin, RigModels</a> · только для личного некоммерческого использования.<br />
+  Android: Chrome и Google Play Services for AR · iPhone/iPad: Safari и Quick Look.
 </footer>
 
 <script>
