@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>Этот человек — AR-маска</title>
+  <meta name="description" content="AR-маска по мотивам мема «Вам снился этот человек?» с трекингом лица и изображения на MindAR.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page">
+  <main class="home-shell">
+    <p class="eyebrow">Задание 2 · MindAR + A-Frame</p>
+    <h1>Вам снился этот человек?</h1>
+    <p class="lead">Примерьте маску на живое лицо или наведите камеру на плакат-маркер. Это два отдельных способа трекинга.</p>
+
+    <div class="mode-grid">
+      <a class="mode-card primary" href="face.html">
+        <span class="mode-number">01 / Трекинг лица</span>
+        <strong>Примерить маску</strong>
+        <span>Откройте фронтальную камеру и наведите её на лицо человека.</span>
+        <span class="mode-arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="mode-card" href="marker.html">
+        <span class="mode-number">02 / Трекинг изображения</span>
+        <strong>Оживить плакат</strong>
+        <span>Направьте камеру на изображение ниже. Маска появится поверх портрета.</span>
+        <span class="mode-arrow" aria-hidden="true">↗</span>
+      </a>
+    </div>
+
+    <section class="marker-section" aria-labelledby="marker-heading">
+      <div>
+        <p class="eyebrow">Изображение-маркер</p>
+        <h2 id="marker-heading">Покажите плакат камере</h2>
+        <p>Для режима изображения откройте плакат на другом экране или распечатайте его. На том же телефоне, где запущена камера, отсканировать плакат нельзя.</p>
+        <a class="download-link" href="assets/marker.png" download="this-man-marker.png">Скачать изображение-маркер ↓</a>
+      </div>
+      <a class="marker-preview" href="assets/marker.png" target="_blank" rel="noopener" aria-label="Открыть изображение-маркер">
+        <img src="assets/marker.png" alt="Плакат «Вам снился этот человек?» — маркер для распознавания" width="995" height="712">
+      </a>
+    </section>
+
+    <p class="home-note">Камера включается только после нажатия кнопки на AR-странице. Нужен HTTPS и разрешение браузера на доступ к камере. <a href="preview.html">Посмотреть 3D-маску без камеры ↗</a></p>
+  </main>
+</body>
+</html>
