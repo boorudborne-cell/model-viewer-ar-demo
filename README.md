@@ -1,33 +1,24 @@
-# Dollar Coin — 3D и AR
+# Две практические работы по AR
 
-Личная некоммерческая демонстрация монеты [Dollar Coin на RigModels](https://rigmodels.com/model.php?view=Dollar_Coin-3d-model__6DRTYIUE29U8TWBSK78PS2S3X&searchkeyword=money) через [`<model-viewer>`](https://modelviewer.dev/).
+## 1. Монета в 3D и AR
 
-**Открыть на телефоне:** https://boorudborne-cell.github.io/model-viewer-ar-demo/
+Открыть: https://boorudborne-cell.github.io/model-viewer-ar-demo/
 
-Модель в `assets/models/Dollar-Coin.glb` конвертирована из OBJ, полученного по ссылке выше. Её диаметр в AR — 12 см. Исходный архив содержит ограничение **Personal Use only**; текст лицензии сохранён в `assets/models/LICENSE-Dollar-Coin.txt`. Для коммерческого использования требуется Premium membership на RigModels. Не используйте модель в коммерческих проектах без соответствующих прав.
+`index.html` подключает `libs/model-viewer.min.js` и показывает `assets/models/Dollar-Coin.glb`. Атрибут `camera-controls` позволяет вращать модель, а `ar` и `ar-modes` включают AR на совместимом телефоне. На Android используется WebXR или Scene Viewer; на iPhone `model-viewer` создаёт USDZ из GLB для Quick Look. `spruit_sunrise_1k.hdr` освещает монету.
 
-## Как запустить
+Монета взята с [RigModels](https://rigmodels.com/model.php?view=Dollar_Coin-3d-model__6DRTYIUE29U8TWBSK78PS2S3X&searchkeyword=money). В архиве указано **только личное использование**; текст лицензии лежит в `assets/models/LICENSE-Dollar-Coin.txt`.
 
-На телефоне откройте адрес GitHub Pages по HTTPS. Вращайте монету пальцем, а на совместимом устройстве нажмите «Посмотреть в AR» и наведите камеру на поверхность.
+## 2. Маска «Этот человек»
 
-- Android: Chrome и установленный Google Play Services for AR. `model-viewer` использует WebXR или Scene Viewer.
-- iPhone/iPad: Safari и Quick Look. `model-viewer` создаёт USDZ из GLB при запуске AR, поэтому отдельный `ios-src` не требуется.
+Открыть: https://boorudborne-cell.github.io/model-viewer-ar-demo/task2/
 
-Доступность AR зависит от устройства и браузера. Кнопка AR скрывается, если режим не поддерживается.
+- `task2/index.html` — выбор двух режимов и изображение-маркер.
+- `task2/marker.html` — MindAR Image Tracking. `targets.mind` содержит признаки изображения `task2/assets/marker.png`. Когда камера узнаёт плакат, `mindar-image-target` показывает `task2/assets/this-man-mask.glb` поверх него.
+- `task2/face.html` — MindAR Face Tracking. `mindar-face-target` прикрепляет ту же маску к обнаруженному лицу. Для лица файл `targets.mind` не нужен.
+- `task2/libs/` — локальные копии A-Frame и MindAR.
 
-Для локального просмотра запустите `serve.bat` или `powershell -NoProfile -ExecutionPolicy Bypass -File server.ps1 -Port 8080`, затем откройте http://localhost:8080/. AR на телефоне требует HTTPS; локальный HTTP-адрес компьютера для этого не подходит.
+`targets.mind` скомпилирован из присланного плаката официальным компилятором MindAR. GLB-маска — изогнутая поверхность с чёрно-белым изображением лица.
 
-## Файлы
+## Проверка
 
-- `index.html` — страница просмотра и управления освещением.
-- `assets/models/Dollar-Coin.glb` — текстурированная монета для 3D и AR.
-- `assets/models/LICENSE-Dollar-Coin.txt` — лицензия из архива модели.
-- `assets/environments/*.hdr` — варианты освещения.
-- `libs/model-viewer.min.js` — локальная копия компонента.
-- `server.ps1`, `serve.bat` — локальный сервер для проверки.
-
-Подробнее об автоматическом USDZ для iOS: [документация `<model-viewer>`](https://modelviewer.dev/examples/augmentedreality/index.html).
-
-## Задание 2 — MindAR
-
-Отдельная AR-маска по мотивам «Вам снился этот человек?» размещена в [`task2/`](task2/). Есть режим трекинга лица и режим трекинга присланного изображения-маркера. Страница монеты и её файлы работают отдельно. Подробнее: [`task2/README.md`](task2/README.md).
+Откройте страницы по HTTPS на телефоне и разрешите доступ к камере. Для режима маркера покажите плакат на другом экране или распечатайте его. Локально можно запустить `serve.bat` и открыть `http://localhost:8080/` или `http://localhost:8080/task2/`.

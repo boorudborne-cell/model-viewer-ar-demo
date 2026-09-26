@@ -2,42 +2,27 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111111">
-  <title>AR по изображению — Этот человек</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Маска по маркеру</title>
   <link rel="stylesheet" href="style.css">
   <script src="libs/aframe.min.js"></script>
   <script src="libs/mindar-image-aframe.prod.js"></script>
-  <script src="ar-page.js" defer></script>
 </head>
-<body class="ar-page" data-mode="image">
-  <main class="ar-stage">
-    <a-scene
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no;"
-      embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights: true"
-      vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      <a-assets timeout="30000">
-        <a-asset-item id="mask-model" src="assets/this-man-mask.glb"></a-asset-item>
-      </a-assets>
-      <a-light type="ambient" color="#ffffff" intensity="1.15"></a-light>
-      <a-light type="directional" color="#ffffff" intensity="0.65" position="-1 2 2"></a-light>
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      <a-entity id="image-target" mindar-image-target="targetIndex: 0">
-        <a-gltf-model src="#mask-model" position="0 -0.05 0.09" scale="0.36 0.36 0.36"></a-gltf-model>
-      </a-entity>
-    </a-scene>
-  </main>
-  <div class="ar-ui">
-    <div class="ar-top"><a class="back-link" href="index.html">← Назад</a><strong>Трекинг изображения</strong></div>
-    <div class="ar-bottom">
-      <p>Откройте плакат на другом экране или распечатайте его. После запуска наведите заднюю камеру на весь плакат.</p>
-      <div class="ar-actions">
-        <button id="start-ar" type="button" disabled>Включить камеру</button>
-        <button id="stop-ar" type="button" class="secondary" hidden>Остановить</button>
-        <a class="secondary" href="assets/marker.png" target="_blank" rel="noopener">Показать маркер ↗</a>
-      </div>
-      <div id="ar-status" class="ar-status" role="status" aria-live="polite">Подготовка сцены…</div>
-    </div>
-  </div>
+<body class="ar-page">
+  <a href="index.html" class="back-link">← Назад</a>
+  <a-scene
+    mindar-image="imageTargetSrc: targets.mind;"
+    embedded color-space="sRGB" renderer="colorManagement: true"
+    vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-assets>
+      <a-asset-item id="mask" src="assets/this-man-mask.glb"></a-asset-item>
+    </a-assets>
+    <a-light type="ambient" intensity="1.15"></a-light>
+    <a-light type="directional" intensity="0.65" position="-1 2 2"></a-light>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-gltf-model src="#mask" position="0 -0.05 0.09" scale="0.36 0.36 0.36"></a-gltf-model>
+    </a-entity>
+  </a-scene>
 </body>
 </html>
