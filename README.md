@@ -8,13 +8,13 @@
 
 Монета взята с [RigModels](https://rigmodels.com/model.php?view=Dollar_Coin-3d-model__6DRTYIUE29U8TWBSK78PS2S3X&searchkeyword=money). В архиве указано **только личное использование**; текст лицензии лежит в `assets/models/LICENSE-Dollar-Coin.txt`.
 
-## 2. Маска «Этот человек»
+## 2. Монета по плакату и маска на лице
 
 Открыть: https://boorudborne-cell.github.io/model-viewer-ar-demo/task2/
 
 - `task2/index.html` — выбор двух режимов и изображение-маркер.
-- `task2/marker.html` — MindAR Image Tracking. `targets.mind` содержит признаки изображения `task2/assets/marker.png`. Когда камера узнаёт плакат, `mindar-image-target` показывает `task2/assets/this-man-mask.glb` поверх него.
-- `task2/face.html` — MindAR Face Tracking. `mindar-face-target` прикрепляет ту же маску к обнаруженному лицу. Для лица файл `targets.mind` не нужен.
+- `task2/marker.html` — MindAR Image Tracking. `targets.mind` содержит признаки изображения `task2/assets/marker.png`. Когда камера узнаёт плакат, `mindar-image-target` показывает монету `assets/models/Dollar-Coin.glb` поверх него.
+- `task2/face.html` — MindAR Face Tracking. `mindar-face-target` прикрепляет маску к обнаруженному лицу. Для лица файл `targets.mind` не нужен.
 - `task2/libs/` — локальные копии A-Frame и MindAR.
 
 `targets.mind` скомпилирован из присланного плаката официальным компилятором MindAR. GLB-маска — изогнутая поверхность с чёрно-белым изображением лица.
