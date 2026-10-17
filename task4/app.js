@@ -18,8 +18,8 @@ light.position.set(1, 2, 1);
 scene.add(light);
 
 const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(0.075, 0.085, 32).rotateX(-Math.PI / 2),
-  new THREE.MeshBasicMaterial({ color: 0x36cc75, side: THREE.DoubleSide })
+  new THREE.RingGeometry(0.065, 0.09, 40).rotateX(-Math.PI / 2),
+  new THREE.MeshBasicMaterial({ color: 0x00ff66, side: THREE.DoubleSide })
 );
 reticle.matrixAutoUpdate = false;
 reticle.visible = false;
@@ -28,7 +28,13 @@ scene.add(reticle);
 let coinModel = null;
 let placedCoin = null;
 let hitTestSource = null;
+let touchHitTestSource = null;
 let arSupported = false;
+const lastHitMatrix = new THREE.Matrix4();
+let lastHitTime = 0;
+const lastTouchMatrix = new THREE.Matrix4();
+let lastTouchSource = null;
+let lastTouchTime = 0;
 
 new GLTFLoader().load(
   '../assets/models/Dollar-Coin.glb?v=3',
@@ -60,15 +66,26 @@ button.addEventListener('click', async () => {
       requiredFeatures: ['hit-test', 'local-floor']
     });
     session.addEventListener('end', () => {
-      hitTestSource?.cancel();
       hitTestSource = null;
+      touchHitTestSource = null;
+      lastHitTime = 0;
+      lastTouchSource = null;
+      lastTouchTime = 0;
       reticle.visible = false;
       if (placedCoin) scene.remove(placedCoin);
       placedCoin = null;
       updateButton();
     }, { once: true });
+    session.addEventListener('select', onSelect);
     const viewerSpace = await session.requestReferenceSpace('viewer');
     hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+    if (session.requestHitTestSourceForTransientInput) {
+      try {
+        touchHitTestSource = await session.requestHitTestSourceForTransientInput({
+          profile: 'generic-touchscreen'
+        });
+      } catch { /* Taps still work through the centre hit-test. */ }
+    }
     await renderer.xr.setSession(session);
     status.textContent = 'Найдите поверхность и коснитесь экрана.';
   } catch (error) {
@@ -78,24 +95,64 @@ button.addEventListener('click', async () => {
   }
 });
 
-const controller = renderer.xr.getController(0);
-controller.addEventListener('select', () => {
-  if (!reticle.visible || placedCoin || !coinModel) return;
-  placedCoin = coinModel.clone(true);
-  reticle.matrix.decompose(placedCoin.position, placedCoin.quaternion, placedCoin.scale);
-  scene.add(placedCoin);
-  reticle.visible = false;
-  status.textContent = 'Монета размещена.';
-});
-scene.add(controller);
+function onSelect(event) {
+  const referenceSpace = renderer.xr.getReferenceSpace();
+  if (!coinModel || !hitTestSource || !referenceSpace) return;
+
+  let pose = null;
+  if (touchHitTestSource) {
+    try {
+      const groups = event.frame.getHitTestResultsForTransientInput(touchHitTestSource);
+      const touch = groups.find((group) => group.inputSource === event.inputSource);
+      pose = touch?.results[0]?.getPose(referenceSpace);
+    } catch { /* Fall back to the centre or last visible marker. */ }
+  }
+  if (!pose && event.inputSource === lastTouchSource && performance.now() - lastTouchTime < 500) {
+    lastHitMatrix.copy(lastTouchMatrix);
+    lastHitTime = performance.now();
+  }
+  if (!pose && performance.now() - lastHitTime > 500) {
+    try { pose = event.frame.getHitTestResults(hitTestSource)[0]?.getPose(referenceSpace); }
+    catch { /* Use the last recently visible marker. */ }
+  }
+  if (pose) {
+    lastHitMatrix.fromArray(pose.transform.matrix);
+    lastHitTime = performance.now();
+  }
+  if (performance.now() - lastHitTime > 500) return;
+
+  if (!placedCoin) {
+    placedCoin = coinModel.clone(true);
+    scene.add(placedCoin);
+  }
+  lastHitMatrix.decompose(placedCoin.position, placedCoin.quaternion, placedCoin.scale);
+  status.textContent = 'Монета размещена. Коснитесь ещё раз, чтобы переставить.';
+}
 
 renderer.setAnimationLoop((time, frame) => {
   const referenceSpace = renderer.xr.getReferenceSpace();
-  if (frame && hitTestSource && referenceSpace && !placedCoin) {
+  if (frame && touchHitTestSource && referenceSpace) {
+    try {
+      const groups = frame.getHitTestResultsForTransientInput(touchHitTestSource);
+      for (const group of groups) {
+        const pose = group.results[0]?.getPose(referenceSpace);
+        if (pose) {
+          lastTouchMatrix.fromArray(pose.transform.matrix);
+          lastTouchSource = group.inputSource;
+          lastTouchTime = performance.now();
+        }
+      }
+    } catch { /* The centre hit-test remains available. */ }
+  }
+  if (frame && hitTestSource && referenceSpace) {
     const results = frame.getHitTestResults(hitTestSource);
     const pose = results[0]?.getPose(referenceSpace);
     reticle.visible = Boolean(pose);
-    if (pose) reticle.matrix.fromArray(pose.transform.matrix);
+    if (pose) {
+      reticle.matrix.fromArray(pose.transform.matrix);
+      lastHitMatrix.copy(reticle.matrix);
+      lastHitTime = performance.now();
+    }
   }
   renderer.render(scene, camera);
 });
