@@ -2,14 +2,14 @@ import * as THREE from 'three';
 import { GLTFLoader } from './libs/loaders/GLTFLoader.js';
 
 const button = document.querySelector('#start');
-const status = document.querySelector('#status');
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.01, 20);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+renderer.setPixelRatio(1);
 renderer.setSize(innerWidth, innerHeight);
 renderer.xr.enabled = true;
 renderer.xr.setReferenceSpaceType('local-floor');
+renderer.xr.setFramebufferScaleFactor(0.8);
 document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2));
@@ -18,7 +18,7 @@ light.position.set(1, 2, 1);
 scene.add(light);
 
 const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(0.065, 0.09, 40).rotateX(-Math.PI / 2),
+  new THREE.RingGeometry(0.0325, 0.045, 32).rotateX(-Math.PI / 2),
   new THREE.MeshBasicMaterial({ color: 0x00ff66, side: THREE.DoubleSide })
 );
 reticle.matrixAutoUpdate = false;
@@ -26,10 +26,11 @@ reticle.visible = false;
 scene.add(reticle);
 
 let coinModel = null;
-let placedCoin = null;
+let modelLoadFailed = false;
+const placedCoins = [];
+const pendingPlacements = [];
 let hitTestSource = null;
 let touchHitTestSource = null;
-let arSupported = false;
 const lastHitMatrix = new THREE.Matrix4();
 let lastHitTime = 0;
 const lastTouchMatrix = new THREE.Matrix4();
@@ -38,24 +39,23 @@ let lastTouchTime = 0;
 
 new GLTFLoader().load(
   '../assets/models/Dollar-Coin.glb?v=3',
-  (gltf) => { coinModel = gltf.scene; updateButton(); },
+  (gltf) => {
+    coinModel = gltf.scene;
+    for (const matrix of pendingPlacements) placeCoin(matrix);
+    pendingPlacements.length = 0;
+  },
   undefined,
-  () => { status.textContent = 'Не удалось загрузить монету.'; }
+  () => {
+    modelLoadFailed = true;
+    button.textContent = 'Не удалось загрузить монету';
+    button.disabled = true;
+  }
 );
 
 if (navigator.xr && window.isSecureContext) {
-  navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-    arSupported = supported;
-    updateButton();
-  }).catch(() => { status.textContent = 'Не удалось проверить поддержку AR.'; });
+  button.disabled = false;
 } else {
-  status.textContent = 'WebXR AR недоступен в этом браузере.';
-}
-
-function updateButton() {
-  button.disabled = !coinModel || !arSupported;
-  if (coinModel && arSupported) status.textContent = 'Готово к запуску.';
-  else if (coinModel && !arSupported) status.textContent = 'WebXR AR недоступен в этом браузере.';
+  button.textContent = 'AR недоступна';
 }
 
 button.addEventListener('click', async () => {
@@ -72,32 +72,45 @@ button.addEventListener('click', async () => {
       lastTouchSource = null;
       lastTouchTime = 0;
       reticle.visible = false;
-      if (placedCoin) scene.remove(placedCoin);
-      placedCoin = null;
-      updateButton();
+      for (const coin of placedCoins) scene.remove(coin);
+      placedCoins.length = 0;
+      pendingPlacements.length = 0;
+      button.disabled = modelLoadFailed;
     }, { once: true });
     session.addEventListener('select', onSelect);
-    const viewerSpace = await session.requestReferenceSpace('viewer');
-    hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-    if (session.requestHitTestSourceForTransientInput) {
-      try {
-        touchHitTestSource = await session.requestHitTestSourceForTransientInput({
-          profile: 'generic-touchscreen'
-        });
-      } catch { /* Taps still work through the centre hit-test. */ }
-    }
     await renderer.xr.setSession(session);
-    status.textContent = 'Найдите поверхность и коснитесь экрана.';
+    startHitTests(session);
+    startTouchHitTest(session);
   } catch (error) {
     if (session) await session.end().catch(() => {});
-    button.disabled = false;
-    status.textContent = `AR не запустилась: ${error.message}`;
+    button.disabled = modelLoadFailed;
+    if (!modelLoadFailed) button.textContent = 'Повторить запуск AR';
   }
 });
 
+async function startHitTests(session) {
+  try {
+    const viewerSpace = await session.requestReferenceSpace('viewer');
+    const source = await session.requestHitTestSource({ space: viewerSpace });
+    if (renderer.xr.getSession() === session) hitTestSource = source;
+    else source.cancel();
+  } catch { /* The session may have ended before tracking started. */ }
+}
+
+async function startTouchHitTest(session) {
+  if (!session.requestHitTestSourceForTransientInput) return;
+  try {
+    const source = await session.requestHitTestSourceForTransientInput({
+      profile: 'generic-touchscreen'
+    });
+    if (renderer.xr.getSession() === session) touchHitTestSource = source;
+    else source.cancel();
+  } catch { /* Taps still work through the centre hit-test. */ }
+}
+
 function onSelect(event) {
   const referenceSpace = renderer.xr.getReferenceSpace();
-  if (!coinModel || !hitTestSource || !referenceSpace) return;
+  if (!hitTestSource || !referenceSpace) return;
 
   let pose = null;
   if (touchHitTestSource) {
@@ -121,17 +134,23 @@ function onSelect(event) {
   }
   if (performance.now() - lastHitTime > 500) return;
 
-  if (!placedCoin) {
-    placedCoin = coinModel.clone(true);
-    scene.add(placedCoin);
-  }
-  lastHitMatrix.decompose(placedCoin.position, placedCoin.quaternion, placedCoin.scale);
-  status.textContent = 'Монета размещена. Коснитесь ещё раз, чтобы переставить.';
+  const matrix = lastHitMatrix.clone();
+  if (coinModel) placeCoin(matrix);
+  else pendingPlacements.push(matrix);
+}
+
+function placeCoin(matrix) {
+  const coin = coinModel.clone(true);
+  matrix.decompose(coin.position, coin.quaternion, coin.scale);
+  coin.scale.multiplyScalar(0.5);
+  scene.add(coin);
+  placedCoins.push(coin);
 }
 
 renderer.setAnimationLoop((time, frame) => {
+  if (!frame) return;
   const referenceSpace = renderer.xr.getReferenceSpace();
-  if (frame && touchHitTestSource && referenceSpace) {
+  if (touchHitTestSource && referenceSpace) {
     try {
       const groups = frame.getHitTestResultsForTransientInput(touchHitTestSource);
       for (const group of groups) {
@@ -144,7 +163,7 @@ renderer.setAnimationLoop((time, frame) => {
       }
     } catch { /* The centre hit-test remains available. */ }
   }
-  if (frame && hitTestSource && referenceSpace) {
+  if (hitTestSource && referenceSpace) {
     const results = frame.getHitTestResults(hitTestSource);
     const pose = results[0]?.getPose(referenceSpace);
     reticle.visible = Boolean(pose);

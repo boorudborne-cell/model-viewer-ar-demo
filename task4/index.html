@@ -9,15 +9,10 @@
     button { padding: 10px 16px; font: inherit; }
     canvas { position: fixed; inset: 0; z-index: -1; }
   </style>
-  <script type="importmap">
-    {"imports": {"three": "./libs/three.module.js"}}
-  </script>
-  <script type="module" src="app.js?v=2"></script>
+  <script type="module" src="app.bundle.js?v=4"></script>
 </head>
 <body>
-  <h1>Размещение монеты в AR</h1>
-  <p>Медленно поводите телефоном в стороны. Когда появится кольцо, коснитесь поверхности на экране. Повторное касание переставит монету.</p>
+  <p>Наведите камеру на поверхность и коснитесь экрана, когда появится кольцо.</p>
   <button id="start" disabled>Запустить AR</button>
-  <p id="status" role="status">Загрузка модели…</p>
 </body>
 </html>
