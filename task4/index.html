@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Размещение монеты в AR</title>
+  <style>
+    body { margin: 20px; font-family: Arial, sans-serif; }
+    button { padding: 10px 16px; font: inherit; }
+    canvas { position: fixed; inset: 0; z-index: -1; }
+  </style>
+  <script type="importmap">
+    {"imports": {"three": "./libs/three.module.js"}}
+  </script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <h1>Размещение монеты в AR</h1>
+  <p>Наведите камеру на поверхность. Когда появится кольцо, коснитесь экрана.</p>
+  <button id="start" disabled>Запустить AR</button>
+  <p id="status" role="status">Загрузка модели…</p>
+</body>
+</html>
