@@ -1,4 +1,4 @@
-import { App } from './core/App.js';
+import { App } from './core/App.js?v=2';
 
 new App().start().catch((error) => {
   console.error('Fatal:', error);

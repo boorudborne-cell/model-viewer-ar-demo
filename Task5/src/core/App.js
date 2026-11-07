@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { SceneStage } from './SceneStage.js';
-import { LightingController } from './LightingController.js';
-import { ModelController } from './ModelController.js';
-import { ARController } from './ARController.js';
-import { ControlPanel } from '../ui/ControlPanel.js';
+import { SceneStage } from './SceneStage.js?v=2';
+import { LightingController } from './LightingController.js?v=2';
+import { ModelController } from './ModelController.js?v=2';
+import { ARController } from './ARController.js?v=2';
+import { ControlPanel } from '../ui/ControlPanel.js?v=2';
 
 /**
  * Точка сборки: связывает сцену, HDRI-освещение, модели, AR и UI-панель.

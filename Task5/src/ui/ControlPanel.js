@@ -1,4 +1,4 @@
-import { ARController } from '../core/ARController.js';
+import { ARController } from '../core/ARController.js?v=2';
 
 /**
  * HTML UI-панель (она же dom-overlay в AR). Компактная: AR-кнопка, модель,
