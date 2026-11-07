@@ -1,0 +1,17 @@
+{
+  "name": "Task6.Runtime",
+  "rootNamespace": "Task6",
+  "references": [
+    "WebXR",
+    "Unity.XR.Management"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

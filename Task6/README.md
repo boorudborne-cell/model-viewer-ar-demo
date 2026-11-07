@@ -13,7 +13,7 @@ AR-сцена Unity (WebGL), собранная на пакете **De-Panther u
 | Камера WebXR и WebXRController | `XR Rig` → `WebXRManager`; `Main Camera` содержит `Camera`, `WebXRCamera`, `WebXRController`, `WebXRSessionController` |
 | Объект в центре экрана (viewer-space) | `Assets/Scripts/ViewerSpaceAnchor.cs` — позиция = позиция камеры + forward × 1.1 м, плавное следование, «лицо» к камере, покачивание, вращение |
 | WebGL-сборка с нужными настройками | `Task6Builder.ConfigurePlayerSettings()`: `compressionFormat = Disabled`, `decompressionFallback = false`, `threadsSupport = false`, шаблон `PROJECT:WebXR2020`, Linear color space |
-| Тестирование на мобильном | Сайт публикуется по HTTPS (GitHub Pages), протокол проверки — ниже |
+| Тестирование на мобильном | HTTPS-хостинг (GitHub Pages), протокол проверки — ниже; AR проверяется на Android-устройстве |
 
 ## Структура проекта
 
@@ -39,11 +39,9 @@ Task6/                                  ← Unity-проект (Unity 6, URP 17.
 
 ## Сборка
 
-> ⚠️ На этой машине **лицензия Unity не активирована** (licensing client: 0 license files,
-> все entitlements `granted: False`), поэтому batch-сборка завершается кодом **198**.
-> Нужен однократный вход: **Unity Hub → Sign in → Unity Personal (бесплатно)**.
-
-После активации лицензии:
+> ⚠️ Unity 6 требует активной лицензии. На этой машине лицензия — «персональная» через
+> **Unity Hub**: при закрытом Hub batch-сборка падает с кодом **198**
+> («No valid Unity Editor license found»). Держите Hub запущенным (иконка в трее).
 
 ```bat
 cd /d C:\Users\Asus\Desktop\Z\Task6
@@ -74,8 +72,8 @@ git -C C:\Users\Asus\Desktop\Z commit -m "Task6 WebGL build"
 git -C C:\Users\Asus\Desktop\Z push
 ```
 
-Страница: `https://<user>.github.io/<repo>/Task6/Build/WebGL/`
-(после сборки папка `Build/WebGL` должна попасть в репозиторий).
+Страница: **https://boorudborne-cell.github.io/model-viewer-ar-demo/Task6/Build/WebGL/**
+(папка `Build/WebGL` закоммичена в репозиторий).
 
 **Локальный HTTPS (для разработки):** mkcert + любой статический сервер:
 
@@ -108,21 +106,28 @@ WebXR есть в Quest Browser, но паспортный сценарий за
 ## Совместимость и размер сборки
 
 - Пакет `unity-webxr-export` 0.25.0 официально рассчитан на Unity **2020.3+**; проект
-  создан на **Unity 6 (6000.6.7f1) + URP 17.6**. В коде пакета есть отдельные ветки для
-  Unity 6 (`UNITY_6000_0_OR_NEWER`: требуется Linear color space — выставлено).
-  Риск совместимости Unity 6 остаётся (пакет старый), поэтому после первой сборки нужно
-  проверить консоль редактора на ошибки компиляции.
-- Настройки WebGL: `compressionFormat = Disabled` (без Brotli/Gzip и без fallback —
-  файлы `.data` идут как есть, поэтому сборка крупнее, чем с gzip), `threadsSupport = false`
-  (нет pthread/wasm-потоков — совместимо с WebXR-тредом браузера), `linkerTarget = Wasm`.
-  Ожидаемый размер: **~6–10 МБ** (`.wasm` + `.data` + loader); точные значения пишет
-  `Build/WebGL/build-report.txt` (`SIZE_MB=...`). Артефактов сборки в этой машине пока
-  нет — их создаёт `build.bat` после активации лицензии.
-- Контрольный список для зачётной проверки: `Library/` не коммитится, лицензия MIT
-  пакета сохраняется в `Packages/com.de-panther.webxr/LICENSE.md`.
+  собран на **Unity 6 (6000.6.7f1) + URP 17.6**. Совместимость проверена на практике:
+  пакет компилируется и работает на Unity 6 после правок проекта:
+  - `Packages/com.de-panther.webxr/package.json` — зависимость поднята до `com.unity.xr.management@4.6.1`;
+  - скрипты проекта вынесены в asmdef (`Task6.Runtime`, `Task6.Editor`) со ссылками на
+    сборку `WebXR` (у пакета `autoReferenced: false`);
+  - Unity 6 требует **Linear** color space (пакет проверяет это и предупреждает) — выставлено.
+  Сборка: **0 ошибок, 2 предупреждения** (незначимые, из кода пакета).
+- Настройки WebGL: `compressionFormat = Disabled` (без Brotli/Gzip и без fallback),
+  `threadsSupport = false` (нет pthread/wasm-потоков), шаблон `WebXR2020`, Medium-стрипинг,
+  IL2CPP `OptimizeSize`.
+- **Фактический размер сборки: 39,27 МБ** (`Build/WebGL/build-report.txt`):
+  `.wasm` — 29,23 МБ, `.data` — 9,60 МБ, `.framework.js` — 0,39 МБ, `.loader.js` — 0,03 МБ.
+  Это следствие отключённого сжатия: с Brotli сборка была бы ~11–13 МБ, но задание требует
+  `compressionFormat = Disabled` + без multithread. Для мобильного трафика 39 МБ — заметно,
+  поэтому для реального продакшена стоит включить Brotli и настроить сервер с
+  `Content-Encoding: br`.
+- Контрольный список для зачётной проверки: `Library/` не коммитится (`.gitignore`),
+  лицензия MIT пакета сохраняется в `Packages/com.de-panther.webxr/LICENSE.md`.
 
 ## Статус
 
 - [x] Проект, пакет webxr, сцена-генератор, настройки XR/WebGL, шаблон с AR-кнопкой, скрипты
-- [ ] **Сборка WebGL** — заблокирована неактивированной лицензией Unity
-- [ ] Публикация сборки на HTTPS и проверка на Android (после сборки)
+- [x] **Сборка WebGL** — выполнена (Unity 6, 0 ошибок), `Build/WebGL`
+- [x] Публикация сборки по HTTPS (GitHub Pages), проверена загрузка WebGL-сцены в браузере
+- [ ] Проверка AR на Android-устройстве (камера/ARCore) — выполняется с телефона по ссылке

@@ -1,0 +1,9 @@
+RESULT=Succeeded
+SIZE_BYTES=41176827
+SIZE_MB=39.27
+ERRORS=0
+WARNINGS=2
+OUT=Build/WebGL
+NOTE: сборка сделана на Unity 6 (6000.6.7f1), webxr-export 0.25.0;
+      compression = Disabled (без gzip/brotli), threads = off — по требованиям задания.
+      Ориентир: с Brotli размер был бы ~11–13 МБ, но это противоречит настройкам.

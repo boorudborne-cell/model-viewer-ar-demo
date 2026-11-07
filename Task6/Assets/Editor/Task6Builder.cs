@@ -55,10 +55,15 @@ namespace Task6.EditorTools
             BuildReport report = BuildPipeline.BuildPlayer(options);
             BuildSummary summary = report.summary;
 
+            // summary.totalSize в WebGL считает не весь вывод, поэтому считаем папку сами.
+            long folderBytes = 0;
+            foreach (string file in Directory.GetFiles(BuildFolder, "*", SearchOption.AllDirectories))
+                folderBytes += new FileInfo(file).Length;
+
             string result =
                 $"RESULT={summary.result}\n" +
-                $"SIZE_BYTES={summary.totalSize}\n" +
-                $"SIZE_MB={summary.totalSize / 1024f / 1024f:F2}\n" +
+                $"SIZE_BYTES={folderBytes}\n" +
+                $"SIZE_MB={folderBytes / 1024f / 1024f:F2}\n" +
                 $"ERRORS={summary.totalErrors}\n" +
                 $"WARNINGS={summary.totalWarnings}\n" +
                 $"OUT={BuildFolder}\n";
@@ -141,8 +146,10 @@ namespace Task6.EditorTools
             PlayerSettings.WebGL.nameFilesAsHashes = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
 
-            // Не вырезать код WebXR при сборке
-            PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.WebGL, ManagedStrippingLevel.Low);
+            // Не вырезать код WebXR при сборке, но и не раздувать wasm:
+            // Medium-стрипинг + IL2CPP OptimizeSize заметно уменьшают размер.
+            PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.WebGL, ManagedStrippingLevel.Medium);
+            PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.WebGL, Il2CppCodeGeneration.OptimizeSize);
             PlayerSettings.stripEngineCode = true;
 
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);

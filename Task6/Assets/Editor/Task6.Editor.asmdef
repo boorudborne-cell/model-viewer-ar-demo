@@ -1,0 +1,21 @@
+{
+  "name": "Task6.Editor",
+  "rootNamespace": "Task6.EditorTools",
+  "references": [
+    "Task6.Runtime",
+    "WebXR",
+    "Unity.XR.Management",
+    "Unity.XR.Management.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

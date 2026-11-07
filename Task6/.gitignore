@@ -24,8 +24,11 @@ crashlytics-build.properties
 
 # Build outputs (Build/WebGL is published on GitHub Pages, keep it)
 Build/*.log
-build.log*
+build*.log
 
 # OS
 Thumbs.db
 .DS_Store
+
+# IL2CPP/Burst generated
+Data/
