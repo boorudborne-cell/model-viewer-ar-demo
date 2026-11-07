@@ -83,15 +83,10 @@ namespace Task6.EditorTools
             anchor.distance = 1.1f;
             anchor.verticalOffset = -0.12f;
             anchor.spinDegreesPerSecond = 18f;
+            anchor.tiltDegrees = 28f;
+            anchor.spinStartDegrees = 45f;
 
-            var glowGO = new GameObject("Glow Light");
-            glowGO.transform.SetParent(cube.transform, false);
-            var glow = glowGO.AddComponent<Light>();
-            glow.type = LightType.Point;
-            glow.color = new Color(0.3f, 0.95f, 1f);
-            glow.intensity = 2f;
-            glow.range = 0.6f;
-            glow.shadows = LightShadows.None;
+            // Свет внутри куба не нужен: даёт выжженное пятно на грани.
 
             // ---------- Сохранение ----------
             EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
@@ -118,7 +113,8 @@ namespace Task6.EditorTools
             if (material.HasProperty("_EmissionColor"))
             {
                 material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", new Color(0.12f, 0.55f, 0.7f) * 0.7f);
+                // Легкое свечение, чтобы куб читался на тёмном фоне, но грани не выжигались.
+                material.SetColor("_EmissionColor", baseColor * 0.25f);
                 material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
             material.enableInstancing = true;

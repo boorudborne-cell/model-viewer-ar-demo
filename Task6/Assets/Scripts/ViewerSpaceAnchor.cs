@@ -28,6 +28,9 @@ namespace Task6
         [Tooltip("Наклон по X, чтобы объём куба читался (15–25°).")]
         public float tiltDegrees = 18f;
 
+        [Tooltip("Стартовый поворот вокруг Y, ° (45° — куб «углом» к зрителю).")]
+        public float spinStartDegrees = 45f;
+
         [Tooltip("Разворачивать объект «лицом» к камере.")]
         public bool faceViewer = true;
 
@@ -60,7 +63,7 @@ namespace Task6
             Vector3 toViewer = cam.position - transform.position;
             if (toViewer.sqrMagnitude < 0.0001f) return;
 
-            float spin = Time.time * spinDegreesPerSecond;
+            float spin = spinStartDegrees + Time.time * spinDegreesPerSecond;
             transform.rotation = Quaternion.LookRotation(toViewer, Vector3.up) *
                                  Quaternion.Euler(tiltDegrees, spin, 0f);
         }
