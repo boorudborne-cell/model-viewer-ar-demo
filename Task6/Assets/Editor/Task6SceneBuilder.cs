@@ -1,0 +1,148 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Rendering;
+using WebXR;
+
+namespace Task6.EditorTools
+{
+    /// <summary>
+    /// Создаёт сцену Task6 программно — удобно и воспроизводимо в batchmode:
+    /// XR Rig (WebXRManager) → Camera Offset → Main Camera
+    /// (Camera + WebXRCamera + WebXRController + WebXRSessionController),
+    /// свет и объект-«кристалл» в viewer-space (ViewerSpaceAnchor).
+    /// </summary>
+    public static class Task6SceneBuilder
+    {
+        public const string ScenePath = "Assets/Scenes/WebARScene.unity";
+
+        private const string ArtifactFolder = "Assets/Artifact";
+        private const string MeshPath = ArtifactFolder + "/ArtifactMesh.asset";
+        private const string MaterialPath = ArtifactFolder + "/ArtifactMaterial.mat";
+
+        [MenuItem("Task6/1. Создать сцену", false, 1)]
+        public static void CreateSceneFromMenu()
+        {
+            CreateScene();
+        }
+
+        public static void CreateScene()
+        {
+            EnsureFolder("Assets/Scenes");
+            EnsureFolder(ArtifactFolder);
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // ---------- XR Rig ----------
+            var rig = new GameObject("XR Rig");
+            rig.AddComponent<WebXRManager>();
+
+            var cameraOffset = new GameObject("Camera Offset");
+            cameraOffset.transform.SetParent(rig.transform, false);
+
+            var cameraGO = new GameObject("Main Camera");
+            cameraGO.tag = "MainCamera";
+            cameraGO.transform.SetParent(cameraOffset.transform, false);
+
+            var camera = cameraGO.AddComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.02f, 0.03f, 0.06f, 1f);
+            camera.nearClipPlane = 0.03f;
+            camera.farClipPlane = 120f;
+            camera.fieldOfView = 60f;
+
+            cameraGO.AddComponent<AudioListener>();
+            cameraGO.AddComponent<WebXRCamera>();   // камера WebXR (требование задания)
+            cameraGO.AddComponent<WebXRController>(); // контроллер WebXR (требование задания)
+
+            var sessionController = cameraGO.AddComponent<WebXRSessionController>();
+            sessionController.normalBackground = camera.backgroundColor;
+
+            // ---------- Свет ----------
+            var lightGO = new GameObject("Key Light");
+            var keyLight = lightGO.AddComponent<Light>();
+            keyLight.type = LightType.Directional;
+            keyLight.intensity = 1.15f;
+            keyLight.color = new Color(1f, 0.97f, 0.92f);
+            lightGO.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
+
+            // ---------- Объект в viewer-space ----------
+            var artifact = new GameObject("Viewer-Space Artifact");
+
+            var meshFilter = artifact.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = GetOrCreateMesh();
+
+            var meshRenderer = artifact.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = GetOrCreateMaterial();
+            meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            meshRenderer.receiveShadows = false;
+
+            artifact.transform.localScale = new Vector3(0.22f, 0.3f, 0.22f);
+
+            var anchor = artifact.AddComponent<ViewerSpaceAnchor>();
+            anchor.viewer = cameraGO.transform;
+            anchor.distance = 1.1f;
+            anchor.verticalOffset = -0.12f;
+            anchor.spinDegreesPerSecond = 18f;
+
+            var glowGO = new GameObject("Glow Light");
+            glowGO.transform.SetParent(artifact.transform, false);
+            var glow = glowGO.AddComponent<Light>();
+            glow.type = LightType.Point;
+            glow.color = new Color(0.3f, 0.95f, 1f);
+            glow.intensity = 2f;
+            glow.range = 0.6f;
+            glow.shadows = LightShadows.None;
+
+            // ---------- Сохранение ----------
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[Task6] Scene created at " + ScenePath);
+        }
+
+        private static Mesh GetOrCreateMesh()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath);
+            if (existing != null) return existing;
+
+            Mesh mesh = ArtifactMesh.CreateOctahedron();
+            AssetDatabase.CreateAsset(mesh, MeshPath);
+            return mesh;
+        }
+
+        private static Material GetOrCreateMaterial()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            if (existing != null) return existing;
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) shader = Shader.Find("Standard");
+
+            var material = new Material(shader) { name = "ArtifactMaterial" };
+
+            var baseColor = new Color(0.10f, 0.72f, 0.85f, 1f);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", baseColor);
+            if (material.HasProperty("_Color")) material.SetColor("_Color", baseColor);
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0.55f);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.8f);
+            if (material.HasProperty("_EmissionColor"))
+            {
+                material.EnableKeyword("_EMISSION");
+                material.SetColor("_EmissionColor", new Color(0.12f, 0.55f, 0.7f) * 0.7f);
+                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+            material.enableInstancing = true;
+
+            AssetDatabase.CreateAsset(material, MaterialPath);
+            return material;
+        }
+
+        private static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+            System.IO.Directory.CreateDirectory(path);
+            AssetDatabase.Refresh();
+        }
+    }
+}

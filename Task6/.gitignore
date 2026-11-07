@@ -1,0 +1,31 @@
+﻿# Unity generated / caches
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity crash reports
+sysinfo.txt
+crashlytics-build.properties
+
+# Build outputs (Build/WebGL is published on GitHub Pages, keep it)
+Build/*.log
+build.log*
+
+# OS
+Thumbs.db
+.DS_Store
