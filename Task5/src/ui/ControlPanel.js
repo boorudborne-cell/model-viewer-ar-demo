@@ -123,29 +123,30 @@ export class ControlPanel {
   /** Проверка поддержки AR до показа кнопки: иначе она выглядит «живой», но мертва. */
   async _detectAR() {
     const btn = this.el.arStart;
-    if (!('xr' in navigator)) {
-      btn.textContent = 'AR: браузер без WebXR';
-      btn.dataset.ready = '0';
-      this.setStatus('3D-сцена работает. AR недоступна: в этом браузере нет WebXR. Откройте в Chrome на Android (нужен ARCore) по HTTPS.', 'warn');
+    if (!ARController.supported) {
+      btn.disabled = true;
+      btn.textContent = window.isSecureContext
+        ? 'AR недоступна (нет WebXR)'
+        : 'AR: нужен HTTPS';
+      this.setStatus(
+        'Локальный предпросмотр активен. AR недоступна: ' +
+        (window.isSecureContext ? 'нет WebXR в этом браузере' : 'открыто без HTTPS/localhost'),
+        'warn'
+      );
       return;
     }
-    if (!window.isSecureContext) {
-      btn.textContent = 'AR: нужен HTTPS';
-      btn.dataset.ready = '0';
-      this.setStatus('3D-сцена работает. Для AR откройте страницу по HTTPS (или localhost).', 'warn');
-      return;
-    }
-    let supported = false;
-    try { supported = await navigator.xr.isSessionSupported('immersive-ar'); } catch { supported = false; }
-    if (!supported) {
-      btn.textContent = 'AR: не поддерживается';
-      btn.dataset.ready = '0';
-      this.setStatus('3D-сцена работает. AR не поддерживается этим устройством/браузером: нужен Chrome на Android с ARCore.', 'warn');
-      return;
-    }
-    btn.textContent = '📱 Запустить AR';
-    btn.dataset.ready = '1';
-    btn.disabled = false;
+
+    // Кнопка в HTML отключена по умолчанию: включаем её, только если устройство
+    // действительно поддерживает immersive-ar.
+    navigator.xr.isSessionSupported('immersive-ar')
+      .then((ok) => {
+        btn.disabled = !ok;
+        if (!ok) btn.textContent = 'AR не поддерживается';
+      })
+      .catch(() => {
+        btn.disabled = true;
+        btn.textContent = 'AR не поддерживается';
+      });
   }
 
   get presenting() { return this.el.panel.classList.contains('presenting'); }
