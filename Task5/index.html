@@ -23,10 +23,12 @@
   <div id="viewport"></div>
 
   <!--
-    Панель управления (в AR — dom-overlay root). Компактная: основные
-    кнопки всегда на виду, остальное — в «Настройках». beforexrselect в
-    ControlPanel гасит тапы по панели, чтобы они не ставили монету сквозь UI.
+    Панель управления. Корень dom-overlay — прозрачная обёртка #xr-overlay:
+    в AR браузер растягивает корень на весь экран, поэтому сама панель им быть
+    не может (иначе её фон с blur закроет камеру, а beforexrselect погасит все
+    касания). beforexrselect в ControlPanel гасит тапы только по #panel.
   -->
+  <div id="xr-overlay">
   <div id="panel">
     <div id="status" class="status" role="status">Запуск…</div>
 
@@ -84,6 +86,7 @@
     </div>
 
     <p class="hint" id="hint">AR — Chrome на Android с ARCore. Наведите камеру на пол и коснитесь его: монета встанет на поверхность.</p>
+  </div>
   </div>
 
   <script type="module" src="./src/main.js"></script>

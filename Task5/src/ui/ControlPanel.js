@@ -10,6 +10,7 @@ export class ControlPanel {
     const $ = (id) => document.getElementById(id);
     this.el = {
       panel: $('panel'),
+      overlay: $('xr-overlay'),
       status: $('status'),
       arStart: $('ar-start'),
       spinToggle: $('spin-toggle'),
@@ -60,7 +61,7 @@ export class ControlPanel {
       }
       el.arStart.disabled = true;
       try {
-        await h.onARStart(el.panel);
+        await h.onARStart(el.overlay || el.panel);
       } catch {
         /* подробный статус уже выставлен в ARController */
       } finally {
