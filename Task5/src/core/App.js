@@ -52,11 +52,13 @@ export class App {
     await this._guard('HDRI', () => this.lighting.loadHDRI(defaultHDRI));
 
     await this._guard('модель', () => this.models.switchTo('Dollar-Coin'));
-    this.panel.setStatus(
-      ARController.supported
-        ? 'Готово: модель, HDRI и PBR активны. Вращайте сцену мышью; «Запустить AR» — на телефоне'
-        : 'Готово (десктоп-предпросмотр). Для AR откройте страницу по HTTPS на телефоне'
-    );
+
+    // Панель асинхронно проверяет поддержку AR; дождёмся её, чтобы не
+    // перезаписать предупреждение о недоступном AR.
+    await this.panel.arReady;
+    if (this.panel.el.arStart.dataset.ready === '1') {
+      this.panel.setStatus('Готово: модель, HDRI и PBR активны. На телефоне нажмите «Запустить AR»');
+    }
 
     this.stage.renderer.setAnimationLoop((_time, frame) => {
       this.models.tick(this.clock.getDelta());
