@@ -86,6 +86,9 @@ try {
 
       $file = Join-Path $root ($path.TrimStart('/') -replace '/', '\')
       $safe = $false
+      if (Test-Path -LiteralPath $file -PathType Container) {
+        $file = Join-Path $file 'index.html'
+      }
       if (Test-Path -LiteralPath $file -PathType Leaf) {
         $full = (Resolve-Path -LiteralPath $file).Path
         if ($full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) { $safe = $true; $file = $full }

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Задание 5 — Three.js: управление объектом, HDRI, PBR, AR</title>
+
+  <!-- Three.js r169 локально: голый спецификатор "three" и аддоны "three/addons/" -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./libs/three/three.module.js",
+      "three/addons/": "./libs/three/examples/jsm/"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Канвас Three.js добавляется сюда (SceneStage) -->
+  <div id="viewport"></div>
+
+  <!--
+    Панель управления. В AR она становится dom-overlay: браузер показывает
+    этот элемент поверх камеры, и кнопки продолжают работать в сессии.
+    Событие beforexrselect (в ControlPanel) гасит тапы по панели, чтобы они
+    не ставили монету сквозь UI.
+  -->
+  <div id="panel">
+    <div id="status" class="status">Запуск…</div>
+
+    <div class="group">
+      <span class="label">Модель</span>
+      <div class="row">
+        <select id="model" class="chip">
+          <option value="Dollar-Coin">Dollar-Coin (glTF)</option>
+          <option value="Dollar-Coin-10RUB">Dollar-Coin-10RUB (glTF)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="label">Цвет</span>
+      <div class="row" id="swatches">
+        <button class="swatch default on" data-color="" title="Из материала модели"></button>
+        <button class="swatch" data-color="#ffd54a" style="--c:#ffd54a" title="Золото"></button>
+        <button class="swatch" data-color="#d9dde2" style="--c:#d9dde2" title="Серебро"></button>
+        <button class="swatch" data-color="#c47a3d" style="--c:#c47a3d" title="Медь"></button>
+        <button class="swatch" data-color="#e04fa0" style="--c:#e04fa0" title="Розовый"></button>
+        <input type="color" id="custom-color" class="swatch custom" value="#7c5cff" title="Свой цвет" />
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="label">Поворот</span>
+      <div class="row">
+        <button id="rot-l" class="chip btn">⟲ 45°</button>
+        <button id="rot-r" class="chip btn">⟳ 45°</button>
+        <label class="chip on" id="spin-chip"><input type="checkbox" id="spin" checked> Автовращение</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="label">HDRI-освещение</span>
+      <div class="row">
+        <select id="hdri" class="chip">
+          <option value="./assets/environments/spruit_sunrise_1k.hdr">Рассвет (Spruit Sunrise)</option>
+          <option value="./assets/environments/whipple_creek_1k.hdr">Лес (Whipple Creek)</option>
+          <option value="./assets/environments/music_hall_01_1k.hdr">Концертный зал</option>
+          <option value="room">Комната (RoomEnvironment)</option>
+        </select>
+        <label class="chip" id="sky-chip"><input type="checkbox" id="skybox"> HDRI как фон</label>
+      </div>
+      <div class="row sliders">
+        <label class="exp">Свет
+          <input type="range" id="exposure" min="0.2" max="2.5" step="0.05" value="1">
+        </label>
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="label">PBR-материал</span>
+      <div class="row sliders">
+        <label class="exp">Metalness
+          <input type="range" id="metalness" min="0" max="1" step="0.05" value="1">
+        </label>
+        <label class="exp">Roughness
+          <input type="range" id="roughness" min="0" max="1" step="0.05" value="1">
+        </label>
+        <button id="mat-reset" class="chip btn">↺ Из glTF</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="row">
+        <button id="ar-start" class="chip btn primary" disabled>📱 Запустить AR</button>
+        <button id="ar-clear" class="chip btn" hidden>Очистить</button>
+        <button id="ar-stop" class="chip btn" hidden>Выйти из AR</button>
+      </div>
+      <p class="hint">AR: наведите камеру на поверхность, касание ставит монету.
+        Кнопки выше работают прямо в AR (dom-overlay). Нужны HTTPS и ARCore/Chrome.</p>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
