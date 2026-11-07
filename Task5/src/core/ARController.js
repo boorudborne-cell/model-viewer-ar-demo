@@ -37,26 +37,60 @@ export class ARController {
 
   async start(overlayRoot) {
     if (this.session) return;
+    if (!navigator.xr) {
+      this._status('AR недоступна: в браузере нет WebXR. Откройте в Chrome на Android (ARCore).', 'err');
+      throw new Error('WebXR is not available');
+    }
     this._status('Запуск AR-сессии…');
-    let session;
+
+    // Разные устройства по-разному поддерживают features — пробуем конфигурации
+    // от полной к минимальной, чтобы AR запускалась максимально широко.
+    const attempts = [
+      { required: ['hit-test', 'local-floor'], optional: ['dom-overlay', 'light-estimation'], space: 'local-floor' },
+      { required: ['hit-test'], optional: ['dom-overlay'], space: 'local-floor' },
+      { required: ['hit-test'], optional: ['dom-overlay'], space: 'local' },
+    ];
+
+    let session = null;
+    let lastError = null;
+    for (const cfg of attempts) {
+      try {
+        const optional = overlayRoot ? cfg.optional : cfg.optional.filter((f) => f !== 'dom-overlay');
+        session = await navigator.xr.requestSession('immersive-ar', {
+          requiredFeatures: cfg.required,
+          optionalFeatures: optional,
+          ...(overlayRoot ? { domOverlay: { root: overlayRoot } } : {}),
+        });
+        this.stage.renderer.xr.setReferenceSpaceType(cfg.space);
+        break;
+      } catch (error) {
+        lastError = error;
+        session = null;
+      }
+    }
+
+    if (!session) {
+      const why = lastError?.name === 'NotSupportedError'
+        ? 'устройство или браузер не поддерживает immersive-ar (нужен Chrome + ARCore)'
+        : (lastError?.message || 'неизвестная ошибка');
+      this._status('Не удалось запустить AR: ' + why, 'err');
+      throw lastError || new Error('AR session failed');
+    }
+
     try {
-      session = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test', 'local-floor'],
-        optionalFeatures: overlayRoot ? ['dom-overlay', 'light-estimation'] : ['light-estimation'],
-        ...(overlayRoot ? { domOverlay: { root: overlayRoot } } : {}),
-      });
       session.addEventListener('end', () => this._onEnd(), { once: true });
       session.addEventListener('select', (e) => this._onSelect(e));
       await this.stage.renderer.xr.setSession(session);
-      this.session = session;
-      this._onStart();
-      this._startHitTests(session);
-      this._startTouchHitTest(session);
     } catch (error) {
-      if (session) await session.end().catch(() => {});
-      this._status('Не удалось запустить AR: ' + (error?.message || error), 'err');
+      await session.end().catch(() => {});
+      this._status('Не удалось привязать AR-сессию: ' + (error?.message || error), 'err');
       throw error;
     }
+
+    this.session = session;
+    this._onStart();
+    this._startHitTests(session);
+    this._startTouchHitTest(session);
   }
 
   stop() { this.session?.end().catch(() => {}); }
