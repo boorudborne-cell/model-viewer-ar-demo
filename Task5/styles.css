@@ -29,6 +29,10 @@ body {
 
 /* ---------- панель ---------- */
 
+/* Корень dom-overlay: в AR растягивается на весь экран и обязан быть прозрачным,
+   чтобы камера была чёткой, а касания мимо панели доходили до WebXR. */
+#xr-overlay { background: transparent; }
+
 #panel {
   position: fixed;
   right: 14px; bottom: 14px;
