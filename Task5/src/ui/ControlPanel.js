@@ -1,3 +1,5 @@
+import { ARController } from '../core/ARController.js';
+
 /**
  * HTML UI-панель (она же dom-overlay в AR). Компактная: AR-кнопка, модель,
  * цвет и автовращение всегда на виду; HDRI/PBR/повороты — в свёрнутом блоке
@@ -126,6 +128,7 @@ export class ControlPanel {
     const btn = this.el.arStart;
     if (!ARController.supported) {
       btn.disabled = true;
+      btn.dataset.ready = '0';
       btn.textContent = window.isSecureContext
         ? 'AR недоступна (нет WebXR)'
         : 'AR: нужен HTTPS';
@@ -139,15 +142,22 @@ export class ControlPanel {
 
     // Кнопка в HTML отключена по умолчанию: включаем её, только если устройство
     // действительно поддерживает immersive-ar.
-    navigator.xr.isSessionSupported('immersive-ar')
-      .then((ok) => {
-        btn.disabled = !ok;
-        if (!ok) btn.textContent = 'AR не поддерживается';
-      })
-      .catch(() => {
-        btn.disabled = true;
-        btn.textContent = 'AR не поддерживается';
-      });
+    let ok = false;
+    try {
+      ok = await navigator.xr.isSessionSupported('immersive-ar');
+    } catch {
+      ok = false;
+    }
+
+    btn.dataset.ready = ok ? '1' : '0';
+    btn.disabled = !ok;
+    if (!ok) {
+      btn.textContent = 'AR не поддерживается';
+      this.setStatus('3D-сцена активна. AR не поддерживается этим устройством/браузером: нужен Chrome на Android с ARCore.', 'warn');
+      return;
+    }
+    btn.textContent = '📱 Запустить AR';
+    btn.disabled = false;
   }
 
   get presenting() { return this.el.panel.classList.contains('presenting'); }
