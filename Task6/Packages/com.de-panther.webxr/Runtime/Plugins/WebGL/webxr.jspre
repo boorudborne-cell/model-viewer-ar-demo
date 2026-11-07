@@ -1,5 +1,20 @@
 Module['WebXR'] = Module['WebXR'] || {};
 
+// Safety net: if WebXRLoader never sends settings from C# (missing preloaded
+// WebXRSettings asset), session requests still get valid feature lists instead
+// of throwing on undefined Settings. SetWebXRSettings() overwrites this.
+if (!Module['WebXR'].Settings) {
+  Module['WebXR'].Settings = {
+    VRRequiredReferenceSpace: ['local-floor'],
+    VROptionalFeatures: ['hand-tracking'],
+    ARRequiredReferenceSpace: ['local-floor'],
+    AROptionalFeatures: ['hit-test', 'hand-tracking'],
+    UseFramebufferScaleFactor: false,
+    UseNativeResolution: false,
+    FramebufferScaleFactor: 1
+  };
+}
+
 setTimeout(function () {
     if (GL && GL.createContext)
     {

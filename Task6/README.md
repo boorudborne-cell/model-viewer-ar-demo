@@ -125,9 +125,36 @@ WebXR есть в Quest Browser, но паспортный сценарий за
 - Контрольный список для зачётной проверки: `Library/` не коммитится (`.gitignore`),
   лицензия MIT пакета сохраняется в `Packages/com.de-panther.webxr/LICENSE.md`.
 
+## Известная проблема и исправление (AR не запускался)
+
+Симптом: на телефоне кнопка «Войти в AR» падала с
+`TypeError: Cannot read properties of undefined (reading 'ARRequiredReferenceSpace')`
+в `XRManager.onRequestARSession`.
+
+Причина: `SetWebXRSettings` не вызывался, потому что `WebXRSettings.GetSettings()`
+возвращал `null`. Ассет `Assets/XR/Settings/WebXRSettings.asset` не был зарегистрирован
+в `EditorBuildSettings` как config object `WebXR.Settings`, поэтому
+`WebXRBuildProcessor.OnPreprocessBuild` не добавлял его в preloaded assets, и в JS
+оставалось `Module.WebXR.Settings === undefined`.
+
+Исправление:
+- `Task6Builder.ConfigureXR()` теперь создаёт/находит `WebXRSettings.asset` и
+  регистрирует его через `EditorBuildSettings.AddConfigObject("WebXR.Settings", ...)`;
+- в `webxr.jspre` добавлен защитный дефолт `Module.WebXR.Settings`
+  (`local-floor` / `hit-test`, `hand-tracking`), который перезаписывается настройками
+  из C#, если они доставлены;
+- сборка пересобрана, ассет попадает в `.data` (`WebXRSettings` и
+  `ARRequiredReferenceSpace` присутствуют в блобе).
+
+Проверено в браузере: `Module.WebXR.Settings` — объект, а
+`onRequestARSession()` формирует `immersive-ar` с `requiredFeatures: ["local-floor"]`
+и `optionalFeatures: ["hit-test","hand-tracking"]` (ранее падало до вызова
+`navigator.xr.requestSession`).
+
 ## Статус
 
 - [x] Проект, пакет webxr, сцена-генератор, настройки XR/WebGL, шаблон с AR-кнопкой, скрипты
 - [x] **Сборка WebGL** — выполнена (Unity 6, 0 ошибок), `Build/WebGL`
 - [x] Публикация сборки по HTTPS (GitHub Pages), проверена загрузка WebGL-сцены в браузере
+- [x] Исправлена передача `WebXR.Settings` в JS (AR-сессия больше не падает на `ARRequiredReferenceSpace`)
 - [ ] Проверка AR на Android-устройстве (камера/ARCore) — выполняется с телефона по ссылке

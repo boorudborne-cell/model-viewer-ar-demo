@@ -24,6 +24,8 @@ namespace Task6.EditorTools
     {
         public const string BuildFolder = "Build/WebGL";
         private const string XRFolder = "Assets/XR";
+        private const string WebXRSettingsPath = "Assets/XR/Settings/WebXRSettings.asset";
+        private const string WebXRSettingsKey = "WebXR.Settings";
 
         [MenuItem("Task6/2. Собрать WebGL", false, 2)]
         public static void BuildFromMenu()
@@ -101,7 +103,33 @@ namespace Task6.EditorTools
                 Debug.Log("[Task6] WebXR loader assigned: " + assigned);
             }
 
+            RegisterWebXRSettings();
+
             EditorUtility.SetDirty(perTarget);
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// Регистрирует WebXRSettings как config object сборки.
+        /// WebXRBuildProcessor.OnPreprocessBuild читает его через WebXRSettings.GetSettings()
+        /// и добавляет ассет в preloaded assets; без регистрации в плеере
+        /// Module.WebXR.Settings остаётся undefined и запрос AR-сессии падает.
+        /// </summary>
+        private static void RegisterWebXRSettings()
+        {
+            WebXR.WebXRSettings settings =
+                AssetDatabase.LoadAssetAtPath<WebXR.WebXRSettings>(WebXRSettingsPath);
+
+            if (settings == null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(WebXRSettingsPath));
+                settings = ScriptableObject.CreateInstance<WebXR.WebXRSettings>();
+                AssetDatabase.CreateAsset(settings, WebXRSettingsPath);
+                Debug.Log("[Task6] Created WebXRSettings asset: " + WebXRSettingsPath);
+            }
+
+            EditorBuildSettings.AddConfigObject(WebXRSettingsKey, settings, true);
+            EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
         }
 
