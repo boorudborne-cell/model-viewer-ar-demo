@@ -1,7 +1,7 @@
-# Задание 6 — WebAR на Unity + WebXR Exporter
+﻿# Задание 6 — WebAR на Unity + WebXR Exporter
 
 AR-сцена Unity (WebGL), собранная на пакете **De-Panther unity-webxr-export**
-(`com.de-panther.webxr` 0.25.0). Объект — низкополигональный «кристалл» —
+(`com.de-panther.webxr` 0.25.0). Объект — низкополигональный «куб» —
 висит в **viewer-space**: в центре поля зрения камеры, следует за головой,
 покачивается и вращается. Новый проект (не монета и не маска).
 
@@ -23,7 +23,7 @@ Task6/                                  ← Unity-проект (Unity 6, URP 17.
 │   ├── Scripts/
 │   │   ├── ViewerSpaceAnchor.cs        объект в viewer-space
 │   │   ├── WebXRSessionController.cs   реакция на AR-сессию, прозрачный фон в AR
-│   │   └── ArtifactMesh.cs             генератор меша кристалла (октаэдр)
+│   │   └── 
 │   ├── Editor/
 │   │   ├── Task6SceneBuilder.cs        меню Task6 → 1. Создать сцену
 │   │   └── Task6Builder.cs             меню Task6 → 2. Собрать WebGL (+ XR loader, настройки)
@@ -51,7 +51,7 @@ build.bat
 Скрипт выполнит:
 
 1. `Task6SceneBuilder.CreateScene()` — сгенерирует сцену `Assets/Scenes/WebARScene.unity`
-   (XR Rig, Main Camera + WebXRCamera + WebXRController, Key Light, кристалл с ViewerSpaceAnchor);
+   (XR Rig, Main Camera + WebXRCamera + WebXRController, Key Light, куб с ViewerSpaceAnchor);
 2. настройки XR (`XR General Settings` + провайдер `WebXR.WebXRLoader` для WebGL);
 3. настройки WebGL (без сжатия/fallback/multithread, шаблон WebXR2020, Linear);
 4. `BuildPipeline.BuildPlayer` → `Build/WebGL` + `build-report.txt` с размером сборки.
@@ -91,9 +91,9 @@ npx http-server Build/WebGL -S -C 192.168.1.10.pem -K 192.168.1.10-key.pem -p 84
 
 1. Открыть HTTPS-ссылку в **Chrome на Android** (ARCore установлен:
    «Google Play Services for AR», устройство из списка поддерживаемых).
-2. Дождаться загрузки сцены: виден вращающийся кристалл в центре экрана (обычный 3D).
+2. Дождаться загрузки сцены: виден вращающийся куб в центре экрана (обычный 3D).
 3. Проверить, что индикатор сверху показал «AR поддерживается».
-4. Нажать **«Войти в AR»**: камера покажет комнату, кристалл будет висеть в центре
+4. Нажать **«Войти в AR»**: камера покажет комнату, куб будет висеть в центре
    поля зрения (viewer-space) — наклоняйте/поворачивайте телефон, объект следует за взглядом.
 5. Повторное нажатие («Выйти из AR») возвращает обычный 3D.
 6. Отладка: `chrome://inspect` на ПК с USB-подключением; в WebGL-консоли

@@ -17,7 +17,6 @@ namespace Task6.EditorTools
         public const string ScenePath = "Assets/Scenes/WebARScene.unity";
 
         private const string ArtifactFolder = "Assets/Artifact";
-        private const string MeshPath = ArtifactFolder + "/ArtifactMesh.asset";
         private const string MaterialPath = ArtifactFolder + "/ArtifactMaterial.mat";
 
         [MenuItem("Task6/1. Создать сцену", false, 1)]
@@ -66,27 +65,27 @@ namespace Task6.EditorTools
             keyLight.color = new Color(1f, 0.97f, 0.92f);
             lightGO.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
 
-            // ---------- Объект в viewer-space ----------
-            var artifact = new GameObject("Viewer-Space Artifact");
+            // ---------- Объект в viewer-space: КУБ ----------
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = "Viewer-Space Cube";
+            Object.DestroyImmediate(cube.GetComponent<BoxCollider>());
 
-            var meshFilter = artifact.AddComponent<MeshFilter>();
-            meshFilter.sharedMesh = GetOrCreateMesh();
-
-            var meshRenderer = artifact.AddComponent<MeshRenderer>();
+            var meshRenderer = cube.GetComponent<MeshRenderer>();
             meshRenderer.sharedMaterial = GetOrCreateMaterial();
             meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
             meshRenderer.receiveShadows = false;
 
-            artifact.transform.localScale = new Vector3(0.22f, 0.3f, 0.22f);
+            // Ребро куба 0.3 м — на 1.1 м от камеры занимает ~1/6 высоты кадра.
+            cube.transform.localScale = Vector3.one * 0.3f;
 
-            var anchor = artifact.AddComponent<ViewerSpaceAnchor>();
+            var anchor = cube.AddComponent<ViewerSpaceAnchor>();
             anchor.viewer = cameraGO.transform;
             anchor.distance = 1.1f;
             anchor.verticalOffset = -0.12f;
             anchor.spinDegreesPerSecond = 18f;
 
             var glowGO = new GameObject("Glow Light");
-            glowGO.transform.SetParent(artifact.transform, false);
+            glowGO.transform.SetParent(cube.transform, false);
             var glow = glowGO.AddComponent<Light>();
             glow.type = LightType.Point;
             glow.color = new Color(0.3f, 0.95f, 1f);
@@ -99,16 +98,6 @@ namespace Task6.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[Task6] Scene created at " + ScenePath);
-        }
-
-        private static Mesh GetOrCreateMesh()
-        {
-            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath);
-            if (existing != null) return existing;
-
-            Mesh mesh = ArtifactMesh.CreateOctahedron();
-            AssetDatabase.CreateAsset(mesh, MeshPath);
-            return mesh;
         }
 
         private static Material GetOrCreateMaterial()

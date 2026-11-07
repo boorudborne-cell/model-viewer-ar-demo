@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Task6
 {
@@ -24,6 +24,9 @@ namespace Task6
 
         [Tooltip("Медленное вращение вокруг своей оси, °/сек.")]
         public float spinDegreesPerSecond = 18f;
+
+        [Tooltip("Наклон по X, чтобы объём куба читался (15–25°).")]
+        public float tiltDegrees = 18f;
 
         [Tooltip("Разворачивать объект «лицом» к камере.")]
         public bool faceViewer = true;
@@ -58,7 +61,8 @@ namespace Task6
             if (toViewer.sqrMagnitude < 0.0001f) return;
 
             float spin = Time.time * spinDegreesPerSecond;
-            transform.rotation = Quaternion.LookRotation(toViewer, Vector3.up) * Quaternion.Euler(0f, spin, 0f);
+            transform.rotation = Quaternion.LookRotation(toViewer, Vector3.up) *
+                                 Quaternion.Euler(tiltDegrees, spin, 0f);
         }
 
         private void SnapToViewer()
