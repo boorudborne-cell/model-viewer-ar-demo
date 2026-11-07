@@ -112,7 +112,20 @@ export class ControlPanel {
         (window.isSecureContext ? 'нет WebXR в этом браузере' : 'открыто без HTTPS/localhost'),
         'warn'
       );
+      return;
     }
+
+    // Кнопка в HTML отключена по умолчанию: включаем её, только если устройство
+    // действительно поддерживает immersive-ar.
+    navigator.xr.isSessionSupported('immersive-ar')
+      .then((ok) => {
+        btn.disabled = !ok;
+        if (!ok) btn.textContent = 'AR не поддерживается';
+      })
+      .catch(() => {
+        btn.disabled = true;
+        btn.textContent = 'AR не поддерживается';
+      });
   }
 
   setARPresenting(on) {
