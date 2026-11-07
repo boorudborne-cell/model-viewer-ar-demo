@@ -151,10 +151,35 @@ WebXR есть в Quest Browser, но паспортный сценарий за
 и `optionalFeatures: ["hit-test","hand-tracking"]` (ранее падало до вызова
 `navigator.xr.requestSession`).
 
+## Известная проблема и исправление (чёрный фон в AR)
+
+Симптом: AR-сессия запускается, но вместо камеры телефона — чёрный фон.
+
+Причины (две, обе обязательны):
+1. В сцене у `WebXRCamera` не назначено ни одного camera-поля (`cameraMain`,
+   `cameraL/R`, `cameraARL/R`). Его `OnXRChange`/`OnHeadsetUpdate` падали с
+   `NullReferenceException` **раньше** обработчика `WebXRSessionController`
+   в цепочке подписчиков, поэтому прозрачный фон камеры не выставлялся.
+2. URP был собран с HDR: буфер кадра `R11G11B10` не имеет альфа-канала,
+   поэтому даже при `alpha = 0` в clear color композитор получал непрозрачный кадр.
+
+Исправление:
+- `WebXRSessionController` больше не зависит от порядка подписчиков: состояние
+  `WebXRManager.XRState` опрашивается в `Update()`, и в AR камера получает
+  `clearFlags = SolidColor` + `backgroundColor.a = 0`;
+- в `WebXRCamera` добавлены null-guards для неназначенных камер (пакет вендорен
+  в `Packages/com.de-panther.webxr`, правка отмечена комментарием);
+- HDR выключен в `PC_RPAsset` и `Mobile_RPAsset`, а `Task6Builder` теперь
+  принудительно выставляет `m_SupportsHDR = false` у всех URP-ассетов при сборке;
+- в шаблоне страницы фон канваса/`body` в режиме `in-ar` сделан прозрачным,
+  а кнопка «Войти/Выйти из AR» переключается по реальным событиям сессии
+  (`onXRSessionStarted/Ended/Error`), а не сразу по клику.
+
 ## Статус
 
 - [x] Проект, пакет webxr, сцена-генератор, настройки XR/WebGL, шаблон с AR-кнопкой, скрипты
 - [x] **Сборка WebGL** — выполнена (Unity 6, 0 ошибок), `Build/WebGL`
 - [x] Публикация сборки по HTTPS (GitHub Pages), проверена загрузка WebGL-сцены в браузере
 - [x] Исправлена передача `WebXR.Settings` в JS (AR-сессия больше не падает на `ARRequiredReferenceSpace`)
+- [x] Исправлен прозрачный фон в AR (HDR off + прозрачная камера + null-guards в `WebXRCamera`)
 - [ ] Проверка AR на Android-устройстве (камера/ARCore) — выполняется с телефона по ссылке

@@ -55,6 +55,9 @@
     body.in-ar #hud-top .title small { display: none; }
     body.in-ar #unity-footer { background: none; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
     body.in-ar .hint { display: none; }
+    /* В AR фон страницы не должен перекрывать камеру, если браузер
+       композитит канвас поверх video-потока. */
+    body.in-ar, body.in-ar #unity-canvas { background: transparent; }
   </style>
 </head>
 <body>
@@ -122,22 +125,63 @@
     };
     document.body.appendChild(script);
 
+    var inAR = false;
+    var arSupported = false;
+
+    var defaultHint = "Нажмите «Войти в AR»: камера покажет комнату, объект будет висеть в центре поля зрения. Повторное нажатие выходит из AR.";
+
+    function setARUI(inSession) {
+      inAR = inSession;
+      arButton.textContent = inSession ? "Выйти из AR" : "Войти в AR";
+      arButton.disabled = !arSupported;
+      document.body.classList.toggle("in-ar", inSession);
+    }
+
     document.addEventListener("onARSupportedCheck", function (event) {
-      var supported = !!(event.detail && event.detail.supported);
-      arButton.disabled = !supported;
-      arState.textContent = supported ? "AR поддерживается" : "AR не поддерживается";
-      arState.className = supported ? "ok" : "warn";
-      hint.textContent = supported
-        ? "Нажмите «Войти в AR»: камера покажет комнату, объект будет висеть в центре поля зрения. Повторное нажатие выходит из AR."
+      arSupported = !!(event.detail && event.detail.supported);
+      arButton.disabled = !arSupported;
+      arState.textContent = arSupported ? "AR поддерживается" : "AR не поддерживается";
+      arState.className = arSupported ? "ok" : "warn";
+      hint.textContent = arSupported
+        ? defaultHint
         : "AR недоступна: нужен Chrome на Android с ARCore и HTTPS. 3D-сцена доступна без AR.";
+    }, false);
+
+    document.addEventListener("onXRSessionStarted", function (event) {
+      var detail = event.detail || {};
+      if (detail.mode !== "immersive-ar") return;
+      setARUI(true);
+      arState.textContent = "AR активно";
+      arState.className = "ok";
+    }, false);
+
+    document.addEventListener("onXRSessionEnded", function () {
+      if (!inAR) return;
+      setARUI(false);
+      arState.textContent = arSupported ? "AR поддерживается" : "AR не поддерживается";
+      arState.className = arSupported ? "ok" : "warn";
+      hint.textContent = arSupported ? defaultHint : "AR недоступна: нужен Chrome на Android с ARCore и HTTPS.";
+    }, false);
+
+    document.addEventListener("onXRSessionError", function (event) {
+      var detail = event.detail || {};
+      if (detail.mode !== "immersive-ar") return;
+      setARUI(false);
+      arState.textContent = "Ошибка AR";
+      arState.className = "warn";
+      hint.textContent = "Не удалось запустить AR: " + (detail.error || "неизвестная ошибка");
     }, false);
 
     arButton.addEventListener("click", function () {
       if (!unityInstance) return;
+      if (!inAR) {
+        // Сессия стартует асинхронно: состояние кнопки переключит событие
+        // onXRSessionStarted, а ошибку покажет onXRSessionError.
+        arButton.disabled = true;
+        arButton.textContent = "Запуск AR…";
+        hint.textContent = "Разрешите доступ к камере и наведите телефон на горизонтальную поверхность.";
+      }
       unityInstance.Module.WebXR.toggleAR();
-      var entering = arButton.textContent !== "Выйти из AR";
-      arButton.textContent = entering ? "Выйти из AR" : "Войти в AR";
-      document.body.classList.toggle("in-ar", entering);
     }, false);
   </script>
 </body>

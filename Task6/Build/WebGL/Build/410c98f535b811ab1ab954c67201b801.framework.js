@@ -462,6 +462,9 @@ void main()
             thisXRMananger.BrowserObject.resumeAsyncCallbacks();
           }
           thisXRMananger.BrowserObject.mainLoop.resume();
+          document.dispatchEvent(new CustomEvent('onXRSessionError', {
+            detail: { mode: 'immersive-ar', error: error && error.message ? error.message : String(error) }
+          }));
         });
       }
     
@@ -492,6 +495,9 @@ void main()
             thisXRMananger.BrowserObject.resumeAsyncCallbacks();
           }
           thisXRMananger.BrowserObject.mainLoop.resume();
+          document.dispatchEvent(new CustomEvent('onXRSessionError', {
+            detail: { mode: 'immersive-vr', error: error && error.message ? error.message : String(error) }
+          }));
         });
       }
     
@@ -553,6 +559,7 @@ void main()
           }
           thisXRMananger.BrowserObject.mainLoop.resume();
         });
+        document.dispatchEvent(new CustomEvent('onXRSessionEnded', { detail: {} }));
       }
       
       XRManager.prototype.removeRemainingTouches = function () {
@@ -1015,6 +1022,9 @@ void main()
       }
     
       XRManager.prototype.onSessionStarted = function (session) {
+        document.dispatchEvent(new CustomEvent('onXRSessionStarted', {
+          detail: { mode: session.isAR ? 'immersive-ar' : (session.isImmersive ? 'immersive-vr' : 'inline') }
+        }));
         var webXRSettings = this.gameModule.WebXR.Settings;
         var glLayerOptions = {
           alpha: true,

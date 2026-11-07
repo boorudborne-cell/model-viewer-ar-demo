@@ -180,7 +180,35 @@ namespace Task6.EditorTools
             PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.WebGL, Il2CppCodeGeneration.OptimizeSize);
             PlayerSettings.stripEngineCode = true;
 
+            DisableHDRForARTransparency();
+
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
+        }
+
+        /// <summary>
+        /// В HDR буфер URP — R11G11B10 без альфа-канала, поэтому прозрачный фон камеры
+        /// в AR теряется и камера телефона не видна (чёрный экран). Выключаем HDR
+        /// у всех URP-ассетов, чтобы в WebGL AR работал passthrough.
+        /// </summary>
+        private static void DisableHDRForARTransparency()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                if (asset == null) continue;
+
+                var serialized = new SerializedObject(asset);
+                SerializedProperty hdr = serialized.FindProperty("m_SupportsHDR");
+                if (hdr == null || !hdr.boolValue) continue;
+
+                hdr.boolValue = false;
+                serialized.ApplyModifiedProperties();
+                EditorUtility.SetDirty(asset);
+                Debug.Log("[Task6] HDR disabled for AR transparency: " + path);
+            }
+
+            AssetDatabase.SaveAssets();
         }
     }
 }
